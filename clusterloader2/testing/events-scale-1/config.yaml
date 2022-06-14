@@ -1,0 +1,41 @@
+# Stress testing access token validation
+#
+{{$namespaces := DefaultParam .CL2_NAMESPACES 1}}
+{{$events := DefaultParam .CL2_EVENTS 30000 }}
+
+name: nodegroups
+namespace:
+  number: {{$namespaces}}
+tuningSets:
+  - name: Sequence
+    parallelismLimitedLoad:
+      parallelismLimit: 7
+  - name: SequenceStepped
+    steppedLoad:
+      burstSize: 30
+      stepDelay: 15s
+
+steps:
+- name: Creating Events
+  phases:
+  {{range $i := Loop $events}}
+  - namespaceRange:
+      min: 1
+      max: {{$namespaces}}
+    replicasPerNamespace: 1
+    tuningSet: SequenceStepped
+    objectBundle:
+      - basename: scale-{{$i}}
+        objectTemplatePath: event.yaml
+  {{ end }}
+
+- name: Waiting for nodes to be gone
+  measurements:
+  - Identifier: WaitForNodes
+    Method: WaitForNodes
+    Params:
+      maxDesiredNodeCount: 0
+      minDesiredNodeCount: 0
+      action: gather
+      labelSelector: test = scale
+      timeout: 60m
