@@ -16,3 +16,7 @@ spec:
       containers:
       - name: agnhost
         image: k8s.gcr.io/e2e-test-images/agnhost:2.32
+      tolerations:
+      - effect: NoSchedule
+        key: node
+        value: nodeless
